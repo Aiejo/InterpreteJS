@@ -1,4 +1,6 @@
+const { Console } = require("console");
 const Lexer = require("./lexer");
+const Parser = require("./parser");
 
 function startRepl() {
   const linea = require("readline");
@@ -11,13 +13,9 @@ function startRepl() {
   rl.on("line", (source) => {
     if (source !== "salir") {
       const lexer = new Lexer(source);
-
-      let token = lexer.siguiente_token();
-
-      while (token.get_literal() != "") {
-        console.log(token.toString());
-        token = lexer.siguiente_token();
-      }
+      const parser = new Parser(lexer);
+      const program = parser.parseProgram();
+      Console.log(program);
     } else {
       rl.close();
     }
