@@ -71,6 +71,12 @@ class LetStatement extends Statement {
   toString() {
     return `${this.token_literal()} ${this.name} = ${this.value};`;
   }
+  set_name(name) {
+    this.name = name;
+  }
+  set_value(value) {
+    this.value = value;
+  }
 }
 
 class ReturnStatements extends Statement {
@@ -81,6 +87,9 @@ class ReturnStatements extends Statement {
 
   toString() {
     return `${this.token_literal()} ${this.return_value};`;
+  }
+  set_return_value(return_value){
+    this.return_value = return_value;
   }
 }
 
@@ -93,6 +102,9 @@ class ExpressionStatement extends Statement {
   toString() {
     return this.expression.toString();
   }
+  set_expression(expression) {
+    this.expression = expression;
+  } 
 }
 
 class Integer extends Expression {
@@ -104,10 +116,14 @@ class Integer extends Expression {
   toString() {
     return this.value.toString();
   }
+  set_value(value) {
+    this.value = value;
+  }
 }
 
 class Prefix extends Expression {
   constructor(token, operator, right = null) {
+   
     super(token);
     this.operator = operator;
     this.right = right;
@@ -115,6 +131,12 @@ class Prefix extends Expression {
 
   toString() {
     return `(${this.operator}${this.right})`;
+  }
+  set_right(right) {
+    this.right = right;
+  }
+  set_operator(operator) {
+    this.operator = operator;
   }
 }
 
@@ -169,6 +191,16 @@ class If extends Expression {
     }
     return out;
   }
+  set_condition(condition){
+    this.condition = condition;
+  }
+  set_consequence(consequence){
+    this.consequence = consequence;
+  }
+  set_consequence(alternative){
+    this.alternative = alternative;
+  }
+  
 }
 
 class Function extends Expression {
@@ -183,12 +215,18 @@ class Function extends Expression {
     let params = param_list.join(", ");
     return `${this.token_literal()}(${params}) ${this.body}`;
   }
+  set_body(body) {
+    this.body = body;
+  }
 }
 
 class Call extends Expression {
   constructor(token, func, args = []) {
     super(token);
     this.function = func;
+    this.arguments = args;
+  }
+  set_arguments(args) {
     this.arguments = args;
   }
 
