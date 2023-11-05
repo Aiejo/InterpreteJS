@@ -27,6 +27,7 @@ const TokenType = {
   MINUS: "MINUS",
   MULTIPLICATION: "MULTIPLICATION",
   NEGATION: "NEGATION",
+  NOT_EQ: "NOT_EQ",
   PLUS: "PLUS",
   RBRACE: "RBRACE",
   RKEY: "RKEY",
@@ -49,6 +50,9 @@ class Token {
 
   get_literal() {
     return this.literal;
+  }
+  get_tokenType() {
+    return this.token_type;
   }
 }
 

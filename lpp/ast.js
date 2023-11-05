@@ -7,7 +7,7 @@ class ASTNode {
 }
 
 class Statement extends ASTNode {
-  constructor(token) {
+  constructor(token) {   
     super();
     this.token = token;
   }
@@ -93,9 +93,9 @@ class ReturnStatements extends Statement {
   }
 }
 
-class ExpressionStatement extends Statement {
+class ExpressionStatement extends Statement {  
   constructor(token, expression = null) {
-    super(token);
+    super(token);    
     this.expression = expression;
   }
 

@@ -17,7 +17,7 @@ const {
   Boolean,
 } = require("./ast");
 const Lexer = require("./lexer");
-const { log } = require("console");
+const { log, Console } = require("console");
 
 const Precedence = {
   LOWEST: 1,
@@ -34,6 +34,8 @@ const PRECEDENCES = {
   [TokenType.DIF]: Precedence.EQUALS,
   [TokenType.LT]: Precedence.LESSGREATER,
   [TokenType.GT]: Precedence.LESSGREATER,
+  [TokenType.GTE]: Precedence.LESSGREATER,
+  [TokenType.LTE]: Precedence.LESSGREATER,
   [TokenType.PLUS]: Precedence.SUM,
   [TokenType.MINUS]: Precedence.SUM,
   [TokenType.DIVISION]: Precedence.PRODUCT,
@@ -45,8 +47,8 @@ class Parser {
   constructor(lexer) {
     
     this._lexer = lexer;
-    this._currentToken = null;
-    this._peekToken = null;
+    this._currentToken = new Token(null,null);    
+    this._peekToken = new Token(null,null);
     this._errors = [];
 
     this._prefixParseFns = this._registerPrefixFns();
@@ -63,26 +65,37 @@ class Parser {
   parseProgram() {
     const program = new Program([]);
     
-    if(this._currentToken != null) {
+    if(this._currentToken !== null) {
+      console.log("ParseProgram");      
       
-      
-      while (this._currentToken.tokenType !== TokenType.EOF) {
-        console.log(this._currentToken);
+      while (this._currentToken.token_type !== TokenType.EOF) {
+        //console.log("miau",this._currentToken);
+        //console.log("miau",this._peekToken);
         const statement = this._parseStatement();
+        
+        //console.log(statement);
+        //prompt("nao manito")
         if (statement !== null) {
           program.statements.push(statement);
         }
-
+        
+        //console.log(this._peekToken); 
+        //console.log("miau",this._currentToken);
+        //console.log("miau",this._peekToken);               
         this._advanceTokens();
+        console.log(this._currentToken)        
       }
     }else{
       throw new Error("El token es nulo");
     }  
-    
+    console.log("Se acabó");
     return program;
   }
 
   _advanceTokens() {
+    console.log("Avanza");
+    //console.log(this._peekToken);
+    //console.log(this._currentToken);
     this._currentToken = this._peekToken;
     this._peekToken = this._lexer.siguiente_token();
   }
@@ -90,7 +103,7 @@ class Parser {
   _currentPrecedence() {
     if(this._currentToken !== null) {
       try {
-        return PRECEDENCES[this._currentToken.tokenType];
+        return PRECEDENCES[this._currentToken.token_type];
       } catch (error) {
         return Precedence.LOWEST;
       }
@@ -101,7 +114,7 @@ class Parser {
 
   _expectedToken(tokenType) {
     if(this._peekToken !== null) {
-      if (this._peekToken.tokenType === tokenType) {
+      if (this._peekToken.token_type === tokenType) {
         this._advanceTokens();
         return true;
       }
@@ -115,7 +128,7 @@ class Parser {
 
   _expectedTokenError(tokenType) {
     if(this._peekToken !== null) {
-      const error = `Se esperaba que el siguiente token fuera ${tokenType} pero se obtuvo ${this._peekToken.tokenType}`;
+      const error = `Se esperaba que el siguiente token fuera ${tokenType} pero se obtuvo ${this._peekToken.token_type}`;
       this._errors.push(error);
     }else{
       throw new Error("El token es nulo");
@@ -129,8 +142,8 @@ class Parser {
       this._advanceTokens();
 
       while (
-        this._currentToken.tokenType !== TokenType.RBRACE &&
-        this._currentToken.tokenType !== TokenType.EOF
+        this._currentToken.token_type !== TokenType.RBRACE &&
+        this._currentToken.token_type !== TokenType.EOF
       ) {
         const statement = this._parseStatement();
 
@@ -148,10 +161,10 @@ class Parser {
   }
 
   _parseBoolean() {
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       return new Boolean(
         this._currentToken,
-        this._currentToken.tokenType === TokenType.TRUE
+        this._currentToken.token_type === TokenType.TRUE
       );
     }else{
       throw new Error("El token es nulo"); 
@@ -171,8 +184,8 @@ class Parser {
   _parseCallArguments() {
     const args = [];
 
-    if(this._peekToken != null){
-      if (this._peekToken.tokenType === TokenType.RPAREN) {
+    if(this._peekToken !== null){
+      if (this._peekToken.token_type === TokenType.RPAREN) {
         this._advanceTokens();
         return args;
       }
@@ -184,7 +197,7 @@ class Parser {
         args.push(expression);
       }
 
-      while (this._peekToken.tokenType === TokenType.COMMA) {
+      while (this._peekToken.token_type === TokenType.COMMA) {
         this._advanceTokens();
         this._advanceTokens();
 
@@ -205,9 +218,14 @@ class Parser {
   }
 
   _parseExpression(precedence) {
-    if (this._currentToken != null) {
-      const prefixParseFn = this._prefixParseFns[this._currentToken.tokenType];
-
+    console.log("parseExpression");
+       
+    if (this._currentToken !== null) {  
+      console.log(this._currentToken)
+      console.log(this._currentToken.token_type);
+      const prefixParseFn = this._prefixParseFns[this._currentToken.token_type];
+      console.log("pupupu",prefixParseFn);
+      //prompt("prefixParseFn");
       if (prefixParseFn === undefined) {
         const message = `No se encontró ninguna función para analizar ${this._currentToken.literal}`;
         this._errors.push(message);
@@ -215,22 +233,23 @@ class Parser {
       }
 
       let leftExpression = prefixParseFn();
-
-      if(this._peekToken != null) {
-        while (
-          this._peekToken.tokenType !== TokenType.SEMICOLON &&
-          precedence < this._peekPrecedence()
-        ) {
-          const infixParseFn = this._infixParseFns[this._peekToken.tokenType];
-
-          if (infixParseFn === undefined) {
-            return leftExpression;
+      //console.log(leftExpression)  
+      console.log(precedence) 
+      console.log(this._peekPrecedence())        
+      //prompt("nao manito")
+      if(this._peekToken !== null) {        
+        while (this._peekToken.token_type !== TokenType.SEMICOLON && precedence < this._peekPrecedence()) {
+          try {
+            let infixParseFn = this._infixParseFns[this._peekToken.token_Type];
+            this._advanceTokens();
+            
+            if(leftExpression !== null){
+              leftExpression = infixParseFn(leftExpression);
+            }
+          }catch(error){
+            console.log("Revisar acá que no sé que pasa")
           }
-
-          this._advanceTokens();
-          leftExpression = infixParseFn(leftExpression);
         }
-
         return leftExpression;
       }else{
         throw new Error("El token es nulo");
@@ -241,14 +260,21 @@ class Parser {
   }
 
   _parseExpressionStatement() {
-    if(this._currentToken != null) {
+    //console.log(this._currentToken)
+    if(this._currentToken !== null) {      
       const expressionStatement = new ExpressionStatement(this._currentToken);
       expressionStatement.set_expression(this._parseExpression(Precedence.LOWEST));
+      
+      console.log("pasó =)")
+      //console.log(this._peekToken.token_type)      
 
-      if(this._peekToken =! null){
-        if (this._peekToken.tokenType === TokenType.SEMICOLON) {
+      if(this._peekToken !== null){
+        
+        if (this._peekToken.token_type === TokenType.SEMICOLON) {
           this._advanceTokens();
         }
+        //console.log(expressionStatement);
+        //prompt("nao manito")
         return expressionStatement;
       }else{
         throw new Error("El token es nulo");
@@ -270,7 +296,7 @@ class Parser {
   }
 
   _parseFunction() {
-    if(this._currentToken != null) {
+    if(this._currentToken !== null) {
       const functionLiteral = new Function(this._currentToken);
 
       if (!this._expectedToken(TokenType.LPAREN)) {
@@ -294,15 +320,15 @@ class Parser {
   _parseFunctionParameters() {
     const parameters = [];
 
-    if(this._peekToken != null) {
-      if (this._peekToken.tokenType === TokenType.RPAREN) {
+    if(this._peekToken !== null) {
+      if (this._peekToken.token_type === TokenType.RPAREN) {
         this._advanceTokens();
         return parameters;
       }
 
       this._advanceTokens();
       
-      if(this._currentToken != null) {
+      if(this._currentToken !== null) {
         const identifier = new Identifier(
           this._currentToken,
           this._currentToken.literal
@@ -310,7 +336,7 @@ class Parser {
     
         parameters.push(identifier);
     
-        while (this._peekToken.tokenType === TokenType.COMMA) {
+        while (this._peekToken.token_type === TokenType.COMMA) {
           this._advanceTokens();
           this._advanceTokens();
     
@@ -336,7 +362,7 @@ class Parser {
   }
 
   _parseIdentifier() {
-    if (this._currentToken != null) {
+    if (this._currentToken !== null) {
       return new Identifier(this._currentToken, this._currentToken.literal);
     }else {
       throw new Error("El token no esxiste"); 
@@ -344,7 +370,7 @@ class Parser {
   }
   _parseIf() {
 
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       const ifExpression = new If(this._currentToken);
 
       if (!this._expectedToken(TokenType.LPAREN)) {
@@ -365,8 +391,8 @@ class Parser {
 
       ifExpression.set_consequence(this._parseBlock());
 
-      if(this._peekToken() != null) {
-        if (this._peekToken.tokenType === TokenType.ELSE) {
+      if(this._peekToken() !== null) {
+        if (this._peekToken.token_type === TokenType.ELSE) {
           this._advanceTokens();
 
           if (!this._expectedToken(TokenType.LBRACE)) {
@@ -386,7 +412,7 @@ class Parser {
   }
 
   _parseInfixExpression(left) {
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       const operator = this._currentToken.literal;
       const precedence = this._currentPrecedence();
       const actual = this._currentToken; 
@@ -402,11 +428,14 @@ class Parser {
   }
 
   _parseInteger() {
-    if(this._currentToken != null){
+    console.log("_parseInteger");    
+    if(this._currentToken !== null){
       const integerLiteral = new Integer(this._currentToken);
-
+      //console.log(integerLiteral);
       try {
+        //console.log(this._currentToken.literal);
         integerLiteral.set_value(parseInt(this._currentToken.literal));
+        //console.log(integerLiteral.value)
       } catch (error) {
         const message = `No se pudo analizar ${this._currentToken.literal} como entero.`;
         this._errors.push(message);
@@ -420,7 +449,7 @@ class Parser {
   }
 
   _parseLetStatement() {
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       const letStatement = new LetStatement(this._currentToken);
 
       if (!this._expectedToken(TokenType.IDENT)) {
@@ -437,8 +466,8 @@ class Parser {
 
       letStatement.set_value(this._parseExpression(Precedence.LOWEST));
 
-      if(this._peekToken != null) {
-        if (this._peekToken.tokenType === TokenType.SEMICOLON) {
+      if(this._peekToken !== null) {
+        if (this._peekToken.token_type === TokenType.SEMICOLON) {
           this._advanceTokens();
         }
 
@@ -452,7 +481,7 @@ class Parser {
   }
 
   _parsePrefixExpression() {
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       const prefixExpression = new Prefix(
         this._currentToken,
         this._currentToken.literal
@@ -469,15 +498,15 @@ class Parser {
   }
 
   _parseReturnStatement() {
-    if(this._currentToken != null){
+    if(this._currentToken !== null){
       const returnStatement = new ReturnStatements(this._currentToken);
 
       this._advanceTokens();
 
       returnStatement.set_returnValue(this._parseExpression(Precedence.LOWEST));
 
-      if(this._peekToken != null) {
-        if (this._peekToken.tokenType === TokenType.SEMICOLON) {
+      if(this._peekToken !== null) {
+        if (this._peekToken.token_type === TokenType.SEMICOLON) {
           this._advanceTokens();
         }
 
@@ -492,8 +521,8 @@ class Parser {
 
   _parseStatement() {
     
-    if(this._currentToken != null){
-      switch (this._currentToken.tokenType) {
+    if(this._currentToken !== null){
+      switch (this._currentToken.token_type) {
         case TokenType.LET:
           console.log('parseProgram statement let statement');
           return this._parseLetStatement();
@@ -501,6 +530,7 @@ class Parser {
           console.log('parseProgram statement return statement');
           return this._parseReturnStatement();
         default:
+          console.log("Default token")
           return this._parseExpressionStatement();
       }
     }else{
@@ -509,40 +539,44 @@ class Parser {
   }
 
   _peekPrecedence() {
-    if(this._peekToken != null){
-      try {
-        return PRECEDENCES[this._peekToken.tokenType];
-      } catch (error) {
+    console.log("_peekPrecedence");
+    if(this._peekToken !== null){
+      if(PRECEDENCES.hasOwnProperty(this._peekToken.token_type)){
+        return PRECEDENCES[this._peekToken.token_type];
+      }else{        
         return Precedence.LOWEST;
-      }
+      }      
     }else{
       throw new Error("El token es nulo");
     }
   }
 
   _registerInfixFns() {
+    console.log("registerInfix");
     return {
-      [TokenType.PLUS]: (left) => this._parseInfixExpression(left),
-      [TokenType.MINUS]: (left) => this._parseInfixExpression(left),
-      [TokenType.DIVISION]: (left) => this._parseInfixExpression(left),
-      [TokenType.MULTIPLICATION]: (left) => this._parseInfixExpression(left),
-      [TokenType.EQ]: (left) => this._parseInfixExpression(left),
-      [TokenType.NOT_EQ]: (left) => this._parseInfixExpression(left),
-      [TokenType.LT]: (left) => this._parseInfixExpression(left),
-      [TokenType.GT]: (left) => this._parseInfixExpression(left),
-      [TokenType.LPAREN]: (left) => this._parseCall(left),
+      [TokenType.PLUS]: () => this._parseInfixExpression(),
+      [TokenType.MINUS]: () => this._parseInfixExpression(),
+      [TokenType.DIVISION]: () => this._parseInfixExpression(),
+      [TokenType.MULTIPLICATION]: () => this._parseInfixExpression(),
+      [TokenType.EQ]: () => this._parseInfixExpression(),
+      [TokenType.DIF]: () => this._parseInfixExpression(),
+      [TokenType.LT]: () => this._parseInfixExpression(),
+      [TokenType.GT]: () => this._parseInfixExpression(),
+      [TokenType.LPAREN]: () => this._parseCall(),
     };
   }
   _registerPrefixFns() {
+    console.log("registerPrefix");
     return {
+      
       [TokenType.FALSE]: () => this._parseBoolean(),
       [TokenType.FUNCTION]: () => this._parseFunction(),
-      [TokenType.IDENT]: () => this._parseIdentifier(),
+      [TokenType.IDENTIFIER]: () => this._parseIdentifier(),
       [TokenType.IF]: () => this._parseIf(),
-      [TokenType.INT]: () => this._parseInteger(),
+      [TokenType.INTEGER]: () => this._parseInteger(),
       [TokenType.LPAREN]: () => this._parseGroupedExpression(),
       [TokenType.MINUS]: () => this._parsePrefixExpression(),
-      [TokenType.NOT]: () => this._parsePrefixExpression(),
+      [TokenType.NEGATION]: () => this._parsePrefixExpression(),
       [TokenType.TRUE]: () => this._parseBoolean(),
     };
   }

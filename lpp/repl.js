@@ -14,8 +14,9 @@ function startRepl() {
     if (source !== "salir") {
       const lexer = new Lexer(source);
       const parser = new Parser(lexer);
-      const program = parser.parseProgram();
-      Console.log(program);
+      const program = parser.parseProgram();     
+      console.log(program);
+      
     } else {
       rl.close();
     }
