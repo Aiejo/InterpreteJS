@@ -2,6 +2,7 @@ const fs = require("fs");
 // Represents tokens that our language understands in parsing.
 export enum TokenType {
   // Literal Types
+  Null,
   Number,
   Identifier,
 
@@ -13,11 +14,13 @@ export enum TokenType {
   Equals,
   OpenParen,
   CloseParen,
+  EOF, // End Of File
 }
 
 // Estructura de datos que relaciona un string con un tipo de dato
 const KEYWORDS: Record<string, TokenType> = {
   let: TokenType.Let,
+  null: TokenType.Null,
 };
 
 // Reoresents a single token from the source-code.
@@ -61,7 +64,13 @@ export function tokenize(sourceCode: string): Token[] {
       tokens.push(token(src.shift(), TokenType.CloseParen));
     }
     // Manejo de operaciones
-    else if (src[0] == "+" || src[0] == "-" || src[0] == "*" || src[0] == "/") {
+    else if (
+      src[0] == "+" ||
+      src[0] == "-" ||
+      src[0] == "*" ||
+      src[0] == "/" ||
+      src[0] == "%"
+    ) {
       tokens.push(token(src.shift(), TokenType.BinaryOperator));
     } // Handle Conditional & Assignment Tokens
     else if (src[0] == "=") {
@@ -88,7 +97,7 @@ export function tokenize(sourceCode: string): Token[] {
 
         // Revisar si es palabra reservada
         const reserved = KEYWORDS[ident];
-        if (reserved) {
+        if (typeof reserved == "number") {
           tokens.push(token(ident, reserved));
         } else {
           // Si entra aquí es porque el usuario definió un identificador
@@ -108,12 +117,6 @@ export function tokenize(sourceCode: string): Token[] {
       }
     }
   }
-
+  tokens.push({ type: TokenType.EOF, value: "EndOfFile" });
   return tokens;
-}
-
-const source = fs.readFileSync("./Text.txt", "utf8");
-
-for (const token of tokenize(source)) {
-  console.log(token);
 }
