@@ -2,25 +2,30 @@ const fs = require("fs");
 // Represents tokens that our language understands in parsing.
 export enum TokenType {
   // Literal Types
-  Null,
   Number,
   Identifier,
 
   // Keywords
   Let,
+  Const,
 
   // Grouping * Operators
   BinaryOperator,
   Equals,
-  OpenParen,
-  CloseParen,
+  Comma,
+  Colon,
+  Semicolon,
+  OpenParen, // (
+  CloseParen, // )
+  OpenBrace, // {
+  CloseBrace, // }
   EOF, // End Of File
 }
 
 // Estructura de datos que relaciona un string con un tipo de dato
 const KEYWORDS: Record<string, TokenType> = {
   let: TokenType.Let,
-  null: TokenType.Null,
+  const: TokenType.Const,
 };
 
 // Reoresents a single token from the source-code.
@@ -41,7 +46,7 @@ function isalpha(src: string) {
 
 // Determina si el carácter se lo puede saltar
 function isskippable(str: string) {
-  return str == " " || str == "\n" || str == "\t";
+  return str == " " || str == "\n" || str == "\t" || str == "\r";
 }
 
 // Determina si es un número, mediante estar en el intervalo de 0 a 9
@@ -62,6 +67,10 @@ export function tokenize(sourceCode: string): Token[] {
       tokens.push(token(src.shift(), TokenType.OpenParen));
     } else if (src[0] == ")") {
       tokens.push(token(src.shift(), TokenType.CloseParen));
+    } else if (src[0] == "{") {
+      tokens.push(token(src.shift(), TokenType.OpenBrace));
+    } else if (src[0] == "}") {
+      tokens.push(token(src.shift(), TokenType.CloseBrace));
     }
     // Manejo de operaciones
     else if (
@@ -75,6 +84,12 @@ export function tokenize(sourceCode: string): Token[] {
     } // Handle Conditional & Assignment Tokens
     else if (src[0] == "=") {
       tokens.push(token(src.shift(), TokenType.Equals));
+    } else if (src[0] == ";") {
+      tokens.push(token(src.shift(), TokenType.Semicolon));
+    } else if (src[0] == ":") {
+      tokens.push(token(src.shift(), TokenType.Colon));
+    } else if (src[0] == ",") {
+      tokens.push(token(src.shift(), TokenType.Comma));
     }
     // Manejo de tokens multicaracter
     else {

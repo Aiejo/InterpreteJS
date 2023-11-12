@@ -1,7 +1,13 @@
 export type NodeType =
+  // STATEMENTS
   | "Program"
+  | "VarDeclaration"
+  // EXPRESSIONS
+  | "AssignmentExpr"
+  // Literals
+  | "Property"
+  | "ObjectLiteral"
   | "NumericLiteral"
-  | "NullLiteral"
   | "Identifier"
   | "BinaryExpr";
 
@@ -10,15 +16,31 @@ export interface Stmt {
   kind: NodeType;
 }
 
+// Statements
 // El programa está compuesto por statements, un programa es un archivo
 export interface Program extends Stmt {
   kind: "Program";
   body: Stmt[];
 }
 
+// Let x; // x is undefined
+export interface VarDeclaration extends Stmt {
+  kind: "VarDeclaration";
+  constant: boolean;
+  identifier: string;
+  value?: Expr;
+}
+
 // Las expresiones si retornan valores
 export interface Expr extends Stmt {}
 
+export interface AssignmentExpr extends Expr {
+  kind: "AssignmentExpr";
+  assigne: Expr;
+  value: Expr;
+}
+
+// Expresiones
 // Por ejempplo 10 - 5
 export interface BinaryExpr extends Expr {
   kind: "BinaryExpr";
@@ -39,7 +61,13 @@ export interface NumericLiteral extends Expr {
   value: number;
 }
 
-export interface NullLiteral extends Expr {
-  kind: "NullLiteral";
-  value: "null";
+export interface Property extends Expr {
+  kind: "Property";
+  key: string;
+  value?: Expr;
+}
+
+export interface ObjectLiteral extends Expr {
+  kind: "ObjectLiteral";
+  properties: Property[];
 }

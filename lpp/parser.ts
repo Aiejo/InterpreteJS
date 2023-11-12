@@ -2,9 +2,11 @@ import {
   BinaryExpr,
   Expr,
   Identifier,
-  NullLiteral,
+  VarDeclaration,
   NumericLiteral,
+  AssignmentExpr,
   Program,
+  Property,
   Stmt,
 } from "./ast";
 
@@ -57,9 +59,56 @@ export default class Parser {
 
   // Esto luego manejará statement más complejos
   private parse_stmt(): Stmt {
-    return this.parse_expr();
+    switch (this.at().type) {
+      case TokenType.Let:
+      case TokenType.Const:
+        return this.parse_var_declaration();
+      default:
+        return this.parse_expr();
+    }
   }
 
+  // let ident
+  // (let | const) ident = expr;
+  private parse_var_declaration(): Stmt {
+    const isConstant = this.eat().type == TokenType.Const;
+    const identifier = this.expect(
+      TokenType.Identifier,
+      "Expected identifier name following let | const keywords."
+    ).value;
+
+    if (this.at().type == TokenType.Semicolon) {
+      this.eat(); // expect semicolon
+      if (isConstant) {
+        throw "Must assigne value to constant expression. No value provided.";
+      }
+
+      return {
+        kind: "VarDeclaration",
+        identifier,
+        constant: false,
+      } as VarDeclaration;
+    }
+
+    this.expect(
+      TokenType.Equals,
+      "Expected equals token following identifier in var declaration."
+    );
+
+    const declaration = {
+      kind: "VarDeclaration",
+      value: this.parse_expr(),
+      identifier,
+      constant: isConstant,
+    } as VarDeclaration;
+
+    this.expect(
+      TokenType.Semicolon,
+      "Variable declaration statment must end with semicolon."
+    );
+
+    return declaration;
+  }
   // Manejo de expresiones
   // Lo más prioritario lo queremos parsear de último
   // Ordenes
@@ -68,7 +117,65 @@ export default class Parser {
   // MultiplicitaveExpr
   // AdditiveExpr
   private parse_expr(): Expr {
-    return this.parse_additive_expr();
+    return this.parse_assignment_expr();
+  }
+
+  private parse_assignment_expr(): Expr {
+    const left = this.parse_object_expr();
+
+    if (this.at().type == TokenType.Equals) {
+      this.eat(); // avanzar el igual
+      const value = this.parse_assignment_expr();
+      return { value, assigne: left, kind: "AssignmentExpr" } as AssignmentExpr;
+    }
+
+    return left;
+  }
+
+  private parse_object_expr(): Expr {
+    // { Prop[] }
+    if (this.at().type !== TokenType.OpenBrace) {
+      return this.parse_additive_expr();
+    }
+
+    this.eat(); // avanzamos de donde se abre
+    const properties = new Array<Property>();
+
+    while (this.not_eof() && this.at().type != TokenType.CloseBrace) {
+      const key = this.expect(
+        TokenType.Identifier,
+        "Object literal key exprected"
+      ).value;
+
+      // Permite declaración de parámetro por variable
+      if (this.at().type == TokenType.Comma) {
+        this.eat(); // advance past comma
+        properties.push({ key, kind: "Property" } as Property);
+        continue;
+      } // Allows shorthand key: pair -> { key }
+      else if (this.at().type == TokenType.CloseBrace) {
+        properties.push({ key, kind: "Property" });
+        continue;
+      }
+
+      // { key: val }
+      this.expect(
+        TokenType.Colon,
+        "Missing colon following identifier in ObjectExpr"
+      );
+      const value = this.parse_expr();
+
+      properties.push({ kind: "Property", value, key });
+      if (this.at().type != TokenType.CloseBrace) {
+        this.expect(
+          TokenType.Comma,
+          "Expected comma or closing bracket following property"
+        );
+      }
+    }
+
+    this.expect(TokenType.CloseBrace, "Object literal missing closing brace.");
+    return { kind: "ObjectLiteral", properties } as ObjectLiteral;
   }
 
   // 45 * 9 + 3
@@ -122,10 +229,6 @@ export default class Parser {
       // Valores definidos por usuario
       case TokenType.Identifier:
         return { kind: "Identifier", symbol: this.eat().value } as Identifier;
-
-      case TokenType.Null:
-        this.eat(); // Avanzar a después del null
-        return { kind: "NullLiteral", value: "null" } as NullLiteral;
       // constantes y constantes numericas
       case TokenType.Number:
         return {

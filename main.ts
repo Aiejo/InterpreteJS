@@ -1,5 +1,7 @@
 import Parser from "./lpp/parser";
+import { createGlobalEnv } from "./runtime/enviroment";
 import { evaluate } from "./runtime/interpreter";
+
 repl();
 
 async function repl() {
@@ -9,13 +11,16 @@ async function repl() {
     input: process.stdin,
     output: process.stdout,
   });
+  const parser = new Parser();
+  const env = createGlobalEnv();
+  // Constantes predeterminadas
+
   // Ejecutar hasta que se salga
   rl.setPrompt(">>");
   rl.on("line", (source: string) => {
     if (source !== "exit") {
-      const parser = new Parser();
       const program = parser.produceAST(source);
-      const result = evaluate(program);
+      const result = evaluate(program, env);
       console.log(result);
     } else {
       process.exit(1);
