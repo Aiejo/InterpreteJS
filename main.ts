@@ -1,8 +1,20 @@
 import Parser from "./lpp/parser";
 import { createGlobalEnv } from "./runtime/enviroment";
 import { evaluate } from "./runtime/interpreter";
+const fs = require("fs").promises;
 
-repl();
+run("./Test.txt");
+
+async function run(filename: string) {
+  const parser = new Parser();
+  const env = createGlobalEnv();
+
+  const input = await fs.readFile(filename, "utf-8");
+  const program = parser.produceAST(input);
+
+  const result = evaluate(program, env);
+  // console.log(result);
+}
 
 async function repl() {
   console.log("\nRepl v0.1");
@@ -20,6 +32,7 @@ async function repl() {
   rl.on("line", (source: string) => {
     if (source !== "exit") {
       const program = parser.produceAST(source);
+      console.log(program);
       const result = evaluate(program, env);
       console.log(result);
     } else {

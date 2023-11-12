@@ -8,17 +8,20 @@ export enum TokenType {
   // Keywords
   Let,
   Const,
-
+  Fn, // fn
   // Grouping * Operators
   BinaryOperator,
   Equals,
   Comma,
+  Dot,
   Colon,
   Semicolon,
   OpenParen, // (
   CloseParen, // )
   OpenBrace, // {
   CloseBrace, // }
+  OpenBracket, // [
+  CloseBracket, //]
   EOF, // End Of File
 }
 
@@ -26,6 +29,7 @@ export enum TokenType {
 const KEYWORDS: Record<string, TokenType> = {
   let: TokenType.Let,
   const: TokenType.Const,
+  fn: TokenType.Fn,
 };
 
 // Reoresents a single token from the source-code.
@@ -71,6 +75,10 @@ export function tokenize(sourceCode: string): Token[] {
       tokens.push(token(src.shift(), TokenType.OpenBrace));
     } else if (src[0] == "}") {
       tokens.push(token(src.shift(), TokenType.CloseBrace));
+    } else if (src[0] == "[") {
+      tokens.push(token(src.shift(), TokenType.OpenBracket));
+    } else if (src[0] == "]") {
+      tokens.push(token(src.shift(), TokenType.CloseBracket));
     }
     // Manejo de operaciones
     else if (
@@ -90,6 +98,8 @@ export function tokenize(sourceCode: string): Token[] {
       tokens.push(token(src.shift(), TokenType.Colon));
     } else if (src[0] == ",") {
       tokens.push(token(src.shift(), TokenType.Comma));
+    } else if (src[0] == ".") {
+      tokens.push(token(src.shift(), TokenType.Dot));
     }
     // Manejo de tokens multicaracter
     else {
