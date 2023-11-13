@@ -4,6 +4,7 @@ export enum TokenType {
   // Literal Types
   Number,
   Identifier,
+  String,
 
   // Keywords
   Let,
@@ -27,8 +28,8 @@ export enum TokenType {
 
 // Estructura de datos que relaciona un string con un tipo de dato
 const KEYWORDS: Record<string, TokenType> = {
-  let: TokenType.Let,
-  const: TokenType.Const,
+  sea: TokenType.Let,
+  con: TokenType.Const,
   fn: TokenType.Fn,
 };
 
@@ -128,6 +129,18 @@ export function tokenize(sourceCode: string): Token[] {
           // Si entra aquí es porque el usuario definió un identificador
           tokens.push(token(ident, TokenType.Identifier));
         }
+      } else if (src[0] == '"') {
+        src.shift();
+        let str = "";
+        while (src.length > 0 && src[0] != '"') {
+          str += src.shift();
+        }
+        if (src[0] != '"') {
+          console.error('Missing closing "');
+          process.exit(1);
+        }
+        src.shift();
+        tokens.push(token(str, TokenType.String));
       } else if (isskippable(src[0])) {
         // Saltar caracteres innecesarios
         src.shift();

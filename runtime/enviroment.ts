@@ -9,13 +9,13 @@ import {
 export function createGlobalEnv() {
   const env = new Environment();
   // Crear el scope global
-  env.declareVar("true", MK_BOOLEAN(true), true);
-  env.declareVar("false", MK_BOOLEAN(false), true);
-  env.declareVar("null", MK_NULL(), true);
+  env.declareVar("verdadero", MK_BOOLEAN(true), true);
+  env.declareVar("falso", MK_BOOLEAN(false), true);
+  env.declareVar("nulo", MK_NULL(), true);
 
   // Definir funciones nativas
   env.declareVar(
-    "print",
+    "imprimir",
     MK_NATIVE_FN((args, scope) => {
       console.log(...args);
       return MK_NULL();
@@ -26,7 +26,7 @@ export function createGlobalEnv() {
   function timeFunction(_args: RuntimeVal[], _env: Environment) {
     return MK_NUMBER(Date.now());
   }
-  env.declareVar("time", MK_NATIVE_FN(timeFunction), true);
+  env.declareVar("tiempo", MK_NATIVE_FN(timeFunction), true);
   return env;
 }
 

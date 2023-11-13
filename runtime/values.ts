@@ -4,6 +4,7 @@ import { Stmt } from "../lpp/ast";
 export type ValueType =
   | "null"
   | "number"
+  | "string"
   | "boolean"
   | "object"
   | "native-fn"
@@ -42,6 +43,16 @@ export function MK_NUMBER(n = 0) {
   return { type: "number", value: n } as NumberVal;
 }
 
+// Definir strings
+
+export interface StringVal extends RuntimeVal {
+  type: "string";
+  value: string;
+}
+
+export function MK_STR(n = "") {
+  return { type: "string", value: "" } as StringVal;
+}
 // Soporte para objetos
 export interface ObjectVal extends RuntimeVal {
   type: "object";
